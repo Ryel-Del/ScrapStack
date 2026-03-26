@@ -1,0 +1,117 @@
+import type { Metadata } from "next";
+import "./globals.css";
+import { Smartphone, MapPin, Github, Mail } from 'lucide-react';
+import Link from 'next/link';
+
+export const metadata: Metadata = {
+  title: "ScrapStack | E-Waste Marketplace",
+  description: "Connecting e-waste sellers with innovation in Bohol.",
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body className="antialiased bg-white text-slate-900">
+        
+        {/* GLOBAL HEADER */}
+        <header className="w-full border-b border-slate-100 bg-white sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <Link href="/" className="flex items-center space-x-2 group">
+              <div className="w-8 h-8 bg-[#10b981] rounded flex items-center justify-center text-white font-bold transition-transform group-hover:scale-110">S</div>
+              <span className="text-xl font-bold tracking-tight text-slate-800">Scrap<span className="text-[#10b981]">Stack</span></span>
+            </Link>
+            
+            <nav className="hidden md:flex space-x-10 font-medium text-slate-600 text-sm">
+              <Link href="/" className="hover:text-[#10b981] transition">Home</Link>
+              <Link href="/marketplace" className="hover:text-[#10b981] transition">Marketplace</Link>
+              <Link href="/impact" className="hover:text-[#10b981] transition">Our Impact</Link>
+            </nav>
+
+            <button className="bg-[#10b981] hover:bg-[#059669] text-white px-5 py-2 rounded-full text-xs font-semibold flex items-center transition active:scale-95 shadow-sm">
+              + List Scrap
+            </button>
+          </div>
+        </header>
+
+        {/* MAIN CONTENT (The dynamic part) */}
+        <main className="min-h-screen">
+          {children}
+        </main>
+
+         {/* 5. FOOTER */}
+     <footer className="bg-[#001c30] text-white pt-16 pb-8 border-t-4 border-[#10b981]">
+  <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12">
+    
+    {/* Brand Column */}
+    <div className="space-y-6">
+      <div className="flex items-center space-x-2">
+        <div className="w-10 h-10 bg-[#10b981] rounded-lg flex items-center justify-center text-white">
+          {/* Using a custom icon shape to match your logo */}
+          <Smartphone className="w-6 h-6" />
+        </div>
+        <span className="text-2xl font-bold tracking-tight">ScrapStack</span>
+      </div>
+      <p className="text-slate-300 text-sm leading-relaxed max-w-xs">
+        Reducing e-waste in the Philippines by connecting broken tech with innovation. 
+        Smart components for a smarter future.
+      </p>
+      <div className="flex space-x-5 text-slate-400">
+        <a href="#" className="hover:text-[#10b981] transition">𝕏</a>
+        <a href="#" className="hover:text-[#10b981] transition"><Github className="w-5 h-5" /></a>
+        <a href="#" className="hover:text-[#10b981] transition"><Mail className="w-5 h-5" /></a>
+      </div>
+    </div>
+
+    {/* Platform Column */}
+    <div>
+      <h4 className="font-bold mb-6 tracking-widest uppercase text-xs text-white">Platform</h4>
+      <ul className="space-y-4 text-sm text-slate-300">
+        <li><a href="#" className="hover:text-[#10b981] transition">Marketplace</a></li>
+        <li><a href="#" className="hover:text-[#10b981] transition">AI Diagnostic</a></li>
+        <li><a href="#" className="hover:text-[#10b981] transition">Seller Dashboard</a></li>
+        <li><a href="#" className="hover:text-[#10b981] transition">Impact Data</a></li>
+      </ul>
+    </div>
+
+    {/* Community Column */}
+    <div>
+      <h4 className="font-bold mb-6 tracking-widest uppercase text-xs text-white">Community</h4>
+      <ul className="space-y-4 text-sm text-slate-300">
+        <li><a href="#" className="hover:text-[#10b981] transition">Engineering Forum</a></li>
+        <li><a href="#" className="hover:text-[#10b981] transition">DIY Projects</a></li>
+        <li><a href="#" className="hover:text-[#10b981] transition">Repair Guides</a></li>
+        <li><a href="#" className="hover:text-[#10b981] transition">Local Chapters</a></li>
+      </ul>
+    </div>
+
+    {/* Local Column */}
+    <div className="space-y-6">
+      <h4 className="font-bold mb-2 tracking-widest uppercase text-xs text-white">Local</h4>
+      <div className="flex items-start space-x-2 text-sm text-[#10b981] font-medium">
+        <MapPin className="w-5 h-5 mt-0.5" />
+        <span>Tagbilaran City, Bohol, Philippines</span>
+      </div>
+      <div className="mt-4">
+        <p className="text-[10px] text-slate-400 leading-tight uppercase tracking-wider">
+          Supporting SDG 12: Responsible<br /> Consumption and Production.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  {/* Copyright Bottom Bar */}
+  <div className="max-w-7xl mx-auto px-6 mt-16 pt-8 border-t border-slate-800 text-center">
+    <p className="text-xs text-slate-500">
+      © 2026 ScrapStack Philippines. All rights reserved.
+    </p>
+  </div>
+</footer>
+
+      </body>
+    </html>
+  );
+}
