@@ -8,8 +8,7 @@ export default function Home() {
   return (
     <div className="bg-white text-slate-900 min-h-screen w-full flex flex-col">
       
-     
-      {/* 2. HERO SECTION */}
+    
       <section className="w-full">
         <main className="max-w-7xl mx-auto px-6 pt-16 pb-24 grid md:grid-cols-2 gap-12 items-center">
           <div className="space-y-8">
@@ -35,7 +34,6 @@ export default function Home() {
         </main>
       </section>
 
-      {/* 3. HOW IT WORKS (The "Sandwich" Middle) */}
       <section className="w-full bg-[#f8fafc] py-24 border-y border-slate-100">
         <div className="max-w-7xl mx-auto px-6 text-center">
           <h2 className="text-4xl font-extrabold text-slate-900 mb-6">How ScrapStack Works</h2>

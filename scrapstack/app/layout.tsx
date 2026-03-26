@@ -37,20 +37,18 @@ export default function RootLayout({
           </div>
         </header>
 
-        {/* MAIN CONTENT (The dynamic part) */}
         <main className="min-h-screen">
           {children}
         </main>
 
-         {/* 5. FOOTER */}
      <footer className="bg-[#001c30] text-white pt-16 pb-8 border-t-4 border-[#10b981]">
   <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12">
     
-    {/* Brand Column */}
+
     <div className="space-y-6">
       <div className="flex items-center space-x-2">
         <div className="w-10 h-10 bg-[#10b981] rounded-lg flex items-center justify-center text-white">
-          {/* Using a custom icon shape to match your logo */}
+
           <Smartphone className="w-6 h-6" />
         </div>
         <span className="text-2xl font-bold tracking-tight">ScrapStack</span>
@@ -66,7 +64,6 @@ export default function RootLayout({
       </div>
     </div>
 
-    {/* Platform Column */}
     <div>
       <h4 className="font-bold mb-6 tracking-widest uppercase text-xs text-white">Platform</h4>
       <ul className="space-y-4 text-sm text-slate-300">
@@ -77,7 +74,6 @@ export default function RootLayout({
       </ul>
     </div>
 
-    {/* Community Column */}
     <div>
       <h4 className="font-bold mb-6 tracking-widest uppercase text-xs text-white">Community</h4>
       <ul className="space-y-4 text-sm text-slate-300">
@@ -88,7 +84,6 @@ export default function RootLayout({
       </ul>
     </div>
 
-    {/* Local Column */}
     <div className="space-y-6">
       <h4 className="font-bold mb-2 tracking-widest uppercase text-xs text-white">Local</h4>
       <div className="flex items-start space-x-2 text-sm text-[#10b981] font-medium">
@@ -103,7 +98,6 @@ export default function RootLayout({
     </div>
   </div>
 
-  {/* Copyright Bottom Bar */}
   <div className="max-w-7xl mx-auto px-6 mt-16 pt-8 border-t border-slate-800 text-center">
     <p className="text-xs text-slate-500">
       © 2026 ScrapStack Philippines. All rights reserved.
