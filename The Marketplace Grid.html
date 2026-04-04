@@ -1,0 +1,72 @@
+const products = [
+  { id: 1, title: 'Macbook Pro 2017 (Water Damaged)', price: '3,500', location: 'Tagbilaran City', category: 'Laptops', tag: 'FOR PARTS', image: '/macbook.jpg' },
+  { id: 2, title: 'Ender 3 V2 Mainboard & Motors', price: '1,200', location: 'Libaong, Panglao', category: 'Robotics', tag: 'WORKING COMPONENTS', image: '/ender.jpg' },
+  { id: 3, title: 'Iphone 11 Damaged Display', price: '2,500', location: 'De La Paz, Cortes', category: 'Phones', tag: 'FOR PARTS', image: '/iphone.jpg' },
+  { id: 4, title: 'Assorted Servos & Motors', price: '500', location: 'Tagbilaran City', category: 'Components', tag: 'NEW/OLD STOCK', image: '/servos.jpg' },
+];
+
+export default function Marketplace() {
+  return (
+    <div className="max-w-7xl mx-auto px-6 py-12 flex gap-12">
+      {/* Sidebar */}
+      <aside className="w-64 flex-shrink-0">
+        <h1 className="text-3xl font-extrabold mb-1">Marketplace</h1>
+        <p className="text-slate-500 text-xs mb-8">Find the specific components you need for your next project</p>
+        
+        <div className="space-y-6">
+          <h4 className="text-xs font-bold uppercase text-slate-400 tracking-widest flex items-center">
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.5a1 1 0 01-.293.707L13 13.5V19a1 1 0 01-.447.894l-2 1A1 1 0 019 20v-6.5L3.293 7.207A1 1 0 013 6.5V4z"/></svg>
+            Categories
+          </h4>
+          <nav className="flex flex-col space-y-2">
+            {['All', 'Smartphones', 'Laptops', 'Robotics', 'Components', 'Audio'].map((cat) => (
+              <button key={cat} className={`text-left px-4 py-2 rounded-lg text-sm font-medium ${cat === 'All' ? 'bg-emerald-500 text-white' : 'text-slate-500 hover:bg-slate-100'}`}>
+                {cat}
+              </button>
+            ))}
+          </nav>
+          
+          <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100">
+            <p className="text-[11px] font-bold text-emerald-800 mb-2">Need Something Specific?</p>
+            <p className="text-[10px] text-emerald-600 mb-4 leading-tight">You can post "Wanted" ads for specific hard-to-find components.</p>
+            <button className="w-full bg-emerald-500 text-white py-2 rounded-lg text-xs font-bold">Post Wanted Ad</button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1">
+        <div className="relative mb-8">
+          <input type="text" placeholder="Search For Parts (e.g. LCD, Stepper Motor)..." className="w-full bg-white border border-slate-200 rounded-xl py-3 px-12 focus:ring-2 focus:ring-emerald-500 outline-none" />
+          <svg className="absolute left-4 top-3.5 text-slate-300 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        </div>
+
+        <div className="grid grid-cols-2 gap-8">
+          {products.map((p) => (
+            <div key={p.id} className="bg-white rounded-2xl overflow-hidden border border-slate-100 hover:shadow-xl transition shadow-sm group cursor-pointer">
+              <div className="relative aspect-video bg-slate-200">
+                <span className="absolute top-3 left-3 bg-slate-800/60 backdrop-blur-sm text-white text-[10px] font-bold px-3 py-1 rounded">
+                  {p.tag}
+                </span>
+                {/* Image tag goes here */}
+              </div>
+              <div className="p-6">
+                <span className="text-emerald-500 text-xs font-bold flex items-center mb-2">
+                  <span className="mr-1">🏷️</span> {p.category}
+                </span>
+                <h3 className="font-bold text-lg text-slate-800 mb-4">{p.title}</h3>
+                <div className="flex justify-between items-center border-t border-slate-50 pt-4">
+                  <span className="text-2xl font-black text-slate-800">₱ {p.price}</span>
+                  <span className="text-[10px] text-slate-400 flex items-center">
+                    <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    {p.location}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </main>
+    </div>
+  );
+}
