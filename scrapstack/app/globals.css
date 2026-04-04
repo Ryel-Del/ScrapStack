@@ -1,23 +1,22 @@
 @import "tailwindcss";
 
-/* Strip out the Geist fonts and dark mode variables */
+
 :root {
   --background: #ffffff;
-  --foreground: #0f172a; /* slate-900 */
+  --foreground: #0f172a; 
 }
 
-/* Force a clean white background and standard font */
+
 body {
   background-color: white !important;
   color: #0f172a;
   margin: 0;
   padding: 0;
-  /* Next.js defaults can sometimes hide overflow. We force scroll here. */
+  
   overflow-y: auto !important; 
   min-height: 100%;
 }
 
-/* Ensure images don't cause weird layout shifts */
 img {
   max-width: 100%;
   display: block;

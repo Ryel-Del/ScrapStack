@@ -20,7 +20,7 @@ export default function ImpactPage() {
 
   return (
     <main className="w-full bg-white">
-      {/* 1. GREEN HERO SECTION */}
+
       <section className="w-full bg-[#065f46] text-white pt-20 pb-32">
         <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
           <div className="space-y-6">
@@ -43,7 +43,6 @@ export default function ImpactPage() {
         </div>
       </section>
 
-      {/* 2. FLOATING STATS CARDS */}
       <section className="max-w-7xl mx-auto px-6 -mt-16 mb-24 relative z-10">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {stats.map((stat, i) => (
@@ -58,7 +57,6 @@ export default function ImpactPage() {
         </div>
       </section>
 
-      {/* 3. THE PROBLEM SECTION */}
       <section className="max-w-7xl mx-auto px-6 py-12 grid md:grid-cols-2 gap-20 items-start">
         <div className="space-y-10">
           <div className="space-y-4">
@@ -103,7 +101,6 @@ export default function ImpactPage() {
           </div>
         </div>
 
-        {/* 4. IMAGE & TESTIMONIAL OVERLAY */}
         <div className="relative group">
           <div className="aspect-[4/5] rounded-[48px] overflow-hidden shadow-2xl">
             <img 
@@ -113,7 +110,7 @@ export default function ImpactPage() {
             />
           </div>
           
-          {/* Testimonial Box */}
+
           <div className="absolute bottom-8 left-8 right-8 bg-[#001c30] p-8 rounded-[32px] text-white shadow-2xl border border-white/10 backdrop-blur-sm">
             <p className="italic text-lg mb-6 text-slate-200 font-medium">
               "ScrapStack helped me source a Retina display for my final project at 1/10th the retail price."
@@ -131,7 +128,6 @@ export default function ImpactPage() {
         </div>
       </section>
 
-      {/* Extra space before the global footer kicks in */}
       <div className="h-24"></div>
     </main>
   );
