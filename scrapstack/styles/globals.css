@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #0f172a; 
+}
+
+/* Base styles */
+@layer base {
+  body {
+    background-color: white !important;
+    color: #0f172a;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto !important; 
+    min-height: 100vh; /* Changed from 100% to 100vh for better layout */
+  }
+
+  img {
+    max-width: 100%;
+    display: block;
+  }
+}
