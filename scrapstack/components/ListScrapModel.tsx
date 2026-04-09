@@ -1,11 +1,10 @@
 'use client';
 import React, { useState } from 'react';
-import { X, Upload, CheckCircle2, Loader2, Camera, Trash2, MapPin, Settings } from 'lucide-react';
+import { X, CheckCircle2, Loader2, Camera, Trash2, MapPin, Settings, Layers } from 'lucide-react';
 import { db, auth } from '../lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Use the exact variable name from your .env.local
 const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GOOGLE_API_KEY || "");
 
 interface AIResult {
@@ -21,6 +20,7 @@ export default function ListScrapModal({ isOpen, onClose }: { isOpen: boolean, o
   const [previews, setPreviews] = useState<string[]>([]);
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("Tagbilaran City");
+  const [selectedCategory, setSelectedCategory] = useState("Components");
   const [isLocating, setIsLocating] = useState(false);
   const [isUntestedUnit, setIsUntestedUnit] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -28,13 +28,13 @@ export default function ListScrapModal({ isOpen, onClose }: { isOpen: boolean, o
 
   if (!isOpen) return null;
 
-  // Reset all states for a fresh listing
   const resetModal = () => {
     setStep(1);
     setImages([]);
     setPreviews([]);
     setDescription("");
     setAiResults([]);
+    setSelectedCategory("Components");
     setIsSubmitting(false);
   };
 
@@ -55,7 +55,7 @@ export default function ListScrapModal({ isOpen, onClose }: { isOpen: boolean, o
   const handleGPS = () => {
     setIsLocating(true);
     if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser");
+      alert("Geolocation is not supported");
       setIsLocating(false);
       return;
     }
@@ -88,14 +88,14 @@ export default function ListScrapModal({ isOpen, onClose }: { isOpen: boolean, o
     setStep(2);
 
     try {
-      // Using 1.5-flash as a fallback if 2.5-flash is at high demand (503 error)
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      // Reverted to stable model name
+      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
       const imageParts = await Promise.all(images.map(fileToGenerativePart));
 
       const prompt = `
-        Analyze these electronic scrap images.
+        Analyze these electronic scrap images for the year 2026.
         1. Identification: Identify the device and salvageable components.
-        2. Pricing: Estimate value in Philippine Pesos (PHP) based on local scrap market.
+        2. Pricing: Estimate value in Philippine Pesos (PHP) based on the local Bohol/Cebu scrap market.
            - User Context: "${description}"
            - Mode: ${isUntestedUnit ? "Selling as one whole UNTESTED unit" : "Selling for individual parts"}
         Return ONLY a JSON array of objects with keys: name, health, condition, price. No markdown.
@@ -108,7 +108,7 @@ export default function ListScrapModal({ isOpen, onClose }: { isOpen: boolean, o
       setStep(3);
     } catch (error) {
       console.error("AI Analysis failed:", error);
-      alert("Analysis failed. Gemini might be busy. Please try again.");
+      alert("AI failed to scan. Try a clearer photo.");
       setStep(1);
     }
   };
@@ -117,11 +117,17 @@ export default function ListScrapModal({ isOpen, onClose }: { isOpen: boolean, o
     setIsSubmitting(true);
     try {
       const totalPrice = aiResults.reduce((sum, item) => sum + item.price, 0);
+      
+      // DYNAMIC TITLE LOGIC: Use the first thing Gemini identified
+      const primaryItem = aiResults[0]?.name || "Electronic Unit";
+      const dynamicTitle = isUntestedUnit ? `Untested ${primaryItem}` : primaryItem;
+
       await addDoc(collection(db, "listings"), {
         sellerId: auth.currentUser?.uid,
-        title: isUntestedUnit ? `Untested ${description || 'Unit'}` : "Salvaged Components",
+        title: dynamicTitle,
         description,
         location,
+        category: selectedCategory, // Mapped to Marketplace filters
         price: totalPrice,
         isUntested: isUntestedUnit,
         components: aiResults,
@@ -151,7 +157,6 @@ export default function ListScrapModal({ isOpen, onClose }: { isOpen: boolean, o
         </div>
 
         <div className="p-8 max-h-[75vh] overflow-y-auto">
-          {/* STEP 1: UPLOAD & INPUT */}
           {step === 1 && (
             <div className="space-y-6">
               <div className="flex gap-4 overflow-x-auto py-2">
@@ -162,15 +167,10 @@ export default function ListScrapModal({ isOpen, onClose }: { isOpen: boolean, o
                 {previews.map((src, i) => (
                   <div key={i} className="shrink-0 w-28 h-28 rounded-2xl relative group">
                     <img src={src} className="w-full h-full object-cover rounded-2xl" />
-                    <button 
-                      onClick={() => {
+                    <button onClick={() => {
                         setPreviews(prev => prev.filter((_, idx) => idx !== i));
                         setImages(prev => prev.filter((_, idx) => idx !== i));
-                      }}
-                      className="absolute -top-2 -right-2 bg-white shadow-md p-1 rounded-full text-red-500"
-                    >
-                      <Trash2 size={14}/>
-                    </button>
+                    }} className="absolute -top-2 -right-2 bg-white shadow-md p-1 rounded-full text-red-500"><Trash2 size={14}/></button>
                   </div>
                 ))}
               </div>
@@ -183,10 +183,10 @@ export default function ListScrapModal({ isOpen, onClose }: { isOpen: boolean, o
               <div className="relative">
                 <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input 
-                  className="w-full pl-12 pr-12 py-4 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full pl-12 pr-12 py-4 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold outline-none"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  placeholder="Pickup Location (e.g. Tagbilaran City)"
+                  placeholder="Pickup Location"
                 />
                 <button onClick={handleGPS} className="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-500">
                   {isLocating ? <Loader2 size={18} className="animate-spin" /> : <Settings size={18} />}
@@ -195,29 +195,47 @@ export default function ListScrapModal({ isOpen, onClose }: { isOpen: boolean, o
 
               <textarea 
                 className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl text-sm outline-none h-24"
-                placeholder="Additional details for the AI..."
+                placeholder="Details for the AI analysis..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />
 
               <button onClick={runAnalysis} disabled={images.length === 0} className="w-full bg-slate-900 text-white font-black py-4 rounded-2xl hover:bg-emerald-600 transition disabled:bg-slate-200">
-                ANALYZE SCRAP
+                START SCAN
               </button>
             </div>
           )}
 
-          {/* STEP 2: LOADING */}
           {step === 2 && (
             <div className="py-20 text-center space-y-4">
               <Loader2 className="w-12 h-12 text-emerald-500 animate-spin mx-auto" />
-              <p className="font-bold text-slate-900 uppercase tracking-tighter">Gemini is appraising your scrap...</p>
+              <p className="font-bold text-slate-900 uppercase tracking-tighter">Analyzing Hardware...</p>
             </div>
           )}
 
-          {/* STEP 3: RESULTS (EDITABLE) */}
           {step === 3 && (
             <div className="space-y-6">
-              <h2 className="text-xl font-black">Confirm Components</h2>
+              <h2 className="text-xl font-black">Review & Categorize</h2>
+              
+              {/* CATEGORY SELECTOR - CRITICAL FOR FILTERS */}
+              <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
+                <div className="flex items-center gap-2 mb-2">
+                    <Layers size={14} className="text-emerald-600" />
+                    <label className="text-[10px] font-black uppercase text-emerald-600">Marketplace Category</label>
+                </div>
+                <select 
+                  className="w-full bg-transparent font-bold text-slate-900 outline-none"
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                >
+                  <option value="Smartphones">Smartphones</option>
+                  <option value="Laptops">Laptops</option>
+                  <option value="Robotics">Robotics</option>
+                  <option value="Components">Components</option>
+                  <option value="Audio">Audio</option>
+                </select>
+              </div>
+
               <div className="space-y-3">
                 {aiResults.map((item, i) => (
                   <div key={i} className="flex items-center gap-4 p-4 border border-slate-100 rounded-2xl bg-slate-50">
@@ -249,20 +267,20 @@ export default function ListScrapModal({ isOpen, onClose }: { isOpen: boolean, o
                   </div>
                 ))}
               </div>
+
               <button onClick={handleConfirmListing} disabled={isSubmitting} className="w-full bg-emerald-500 text-white font-black py-4 rounded-2xl shadow-lg hover:bg-emerald-600 transition">
-                {isSubmitting ? "POSTING..." : "CONFIRM & POST"}
+                {isSubmitting ? "POSTING..." : "CONFIRM LISTING"}
               </button>
             </div>
           )}
 
-          {/* STEP 4: SUCCESS */}
           {step === 4 && (
             <div className="text-center py-10 space-y-6">
               <CheckCircle2 size={64} className="text-emerald-500 mx-auto" />
-              <h2 className="text-2xl font-black">Listing Live!</h2>
+              <h2 className="text-2xl font-black">Success!</h2>
               <div className="flex flex-col gap-3">
                 <button onClick={resetModal} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold">List Another</button>
-                <button onClick={handleClose} className="w-full py-4 border border-slate-200 text-slate-600 rounded-2xl font-bold">Close</button>
+                <button onClick={handleClose} className="w-full py-4 border border-slate-200 text-slate-600 rounded-2xl font-bold">Return to Market</button>
               </div>
             </div>
           )}
