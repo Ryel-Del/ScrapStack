@@ -1,0 +1,6 @@
+{
+  "buildCommand": "cd scrapstack && npm run build",
+  "outputDirectory": "scrapstack/.next",
+  "framework": "nextjs",
+  "installCommand": "cd scrapstack && npm install"
+}
