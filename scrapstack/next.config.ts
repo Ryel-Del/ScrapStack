@@ -1,9 +1,7 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  typescript: {
-    ignoreBuildErrors: true,
-  },
+ // Object literal may only specify known properties, and 'eslint' does not exist in type 'NextConfig'.
   eslint: {
     ignoreDuringBuilds: true,
   },
