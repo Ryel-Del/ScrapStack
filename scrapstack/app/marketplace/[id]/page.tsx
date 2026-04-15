@@ -1,61 +1,110 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { db } from '../../../lib/firebase';
+import { db, auth } from '../../../lib/firebase';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { 
-  ArrowLeft, ChevronRight, Cpu, MapPin, CheckCircle, 
-  Clock, ShoppingBag, MessageSquare, Loader2, Star
+  ArrowLeft, Cpu, MapPin, CheckCircle, 
+  Clock, ShoppingBag, MessageSquare, Loader2, Star, UserCheck, X
 } from 'lucide-react';
 
 export default function ProductDetails() {
   const { id } = useParams();
   const router = useRouter();
   const [listing, setListing] = useState<any>(null);
-  const [seller, setSeller] = useState<any>(null); // State for actual seller data
+  const [seller, setSeller] = useState<any>(null); 
   const [loading, setLoading] = useState(true);
+  
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+
+  const [currentUser, setCurrentUser] = useState(auth.currentUser);
+
+  useEffect(() => {
+    const unsub = auth.onAuthStateChanged((user) => {
+      setCurrentUser(user);
+    });
+    return () => unsub();
+  }, []);
+
 
   useEffect(() => {
     const fetchListingAndSeller = async () => {
       if (!id) return;
-      
-      // 1. Fetch Listing
-      const docRef = doc(db, "listings", id as string);
-      const docSnap = await getDoc(docRef);
-      
-      if (docSnap.exists()) {
-        const listingData = docSnap.data();
-        setListing(listingData);
-
-        // 2. Fetch actual Seller Profile using sellerId
-        if (listingData.sellerId) {
-          const sellerRef = doc(db, "users", listingData.sellerId);
-          const sellerSnap = await getDoc(sellerRef);
-          if (sellerSnap.exists()) {
-            setSeller(sellerSnap.data());
+      try {
+        const docRef = doc(db, "listings", id as string);
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists()) {
+          const listingData = docSnap.data();
+          setListing(listingData);
+          
+          
+          if (currentUser && listingData.sellerId === currentUser.uid) {
+            setSeller({
+              displayName: currentUser.displayName || "My Profile",
+            });
+          } 
+         
+          else if (listingData.sellerId) {
+            const userSnap = await getDoc(doc(db, "users", listingData.sellerId));
+            if (userSnap.exists()) {
+              setSeller(userSnap.data());
+            } else {
+            
+              setSeller({
+                displayName: listingData.sellerName || "Authorized Seller",
+              });
+            }
           }
+        } else {
+          router.push('/marketplace');
         }
-      } else {
-        router.push('/marketplace');
+      } catch (err) {
+        console.error("Fetch error:", err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchListingAndSeller();
-  }, [id, router]);
+  }, [id, currentUser, router]); 
 
-  const handleBuy = async () => {
-    if (!listing) return;
-    const confirmBuy = confirm(`Do you want to reserve this ${listing.title} for ₱${listing.price}?`);
-    
-    if (confirmBuy) {
+  const handleLogin = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+      setShowAuthModal(false);
+    } catch (error) {
+      console.error("Login failed", error);
+    }
+  };
+
+  const handleBuyTrigger = () => {
+    if (!currentUser) {
+      setShowAuthModal(true);
+      return;
+    }
+    if (currentUser.uid === listing.sellerId) return; 
+    setShowConfirmModal(true);
+  };
+
+  const executePurchase = async () => {
+    setIsProcessing(true);
+    try {
       const docRef = doc(db, "listings", id as string);
       await updateDoc(docRef, {
         status: "SOLD",
+        purchasedBy: currentUser?.uid,
         soldAt: serverTimestamp()
       });
-      alert("Success! Item reserved.");
-      router.push('/marketplace');
+      router.push('/profile');
+    } catch (e) {
+      alert("Transaction failed.");
+      setIsProcessing(false);
     }
   };
 
@@ -65,117 +114,136 @@ export default function ProductDetails() {
     </div>
   );
 
+  const isOwner = currentUser?.uid === listing?.sellerId;
+
   return (
-    <div className="min-h-screen bg-slate-50 font-sans">
+    <div className="min-h-screen bg-slate-50 font-sans relative">
       <main className="max-w-6xl mx-auto p-6 lg:p-12">
         <button 
           onClick={() => router.back()}
-          className="flex items-center text-slate-500 text-sm font-bold mb-8 hover:text-emerald-600 transition group"
+          className="flex items-center text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-8 hover:text-emerald-600 transition group"
         >
-          <ArrowLeft size={18} className="mr-2 group-hover:-translate-x-1 transition-transform" /> 
+          <ArrowLeft size={16} className="mr-2 group-hover:-translate-x-1 transition-transform" /> 
           Back to Marketplace
         </button>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-          {/* LEFT COLUMN */}
+          {/* IMAGE & DESC */}
           <section className="lg:col-span-7 space-y-6">
-            <div className="rounded-[32px] overflow-hidden shadow-2xl border border-slate-200 bg-white">
-              <img 
-                src={listing.imageUrl || "https://placehold.co/600x400?text=No+Image"} 
-                alt={listing.title} 
-                className="w-full aspect-[4/3] object-cover"
-              />
+            <div className="rounded-[40px] overflow-hidden shadow-2xl border border-slate-200 bg-white">
+              <img src={listing.imageUrl || "https://placehold.co/600x400?text=No+Image"} className="w-full aspect-[4/3] object-cover" alt="p" />
             </div>
-            
-            <div className="bg-white p-8 rounded-[24px] border border-slate-100 text-slate-600 leading-relaxed shadow-sm text-sm italic">
-              "{listing.description || "No description provided."}"
+            <div className="bg-white p-8 rounded-[32px] border border-slate-100 text-slate-500 italic font-medium text-sm leading-relaxed shadow-sm">
+              "{listing.description}"
             </div>
           </section>
 
-          {/* RIGHT COLUMN */}
+          {/* ACTIONS & INFO */}
           <section className="lg:col-span-5">
             <div className="flex justify-between items-center mb-4">
-              <span className="px-3 py-1 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-700 uppercase tracking-wider">
-                {listing.category || "General Tech"}
-              </span>
-              <span className="text-slate-400 text-xs flex items-center gap-1 font-medium">
-                <Clock size={14} /> Active Listing
-              </span>
+              <span className="px-4 py-1.5 rounded-full text-[9px] font-black bg-emerald-100 text-emerald-700 uppercase tracking-widest">{listing.category}</span>
+              <span className="text-slate-400 text-[9px] flex items-center gap-1 font-black uppercase tracking-widest"><Clock size={14} /> {listing.status === 'SOLD' ? 'Closed' : 'Active'}</span>
             </div>
             
-            <h1 className="text-4xl font-black text-slate-900 mb-6 leading-tight">{listing.title}</h1>
-            
-            <div className="flex gap-4 text-[10px] text-slate-500 mb-8 font-black uppercase tracking-widest">
-              <span className="flex items-center gap-1.5"><MapPin size={14} className="text-emerald-500" /> {listing.location}</span>
-              <span className="flex items-center gap-1.5"><CheckCircle size={14} className="text-emerald-500" /> Verified Tech</span>
-            </div>
+            <h1 className="text-4xl font-black text-slate-900 mb-6 italic tracking-tighter">{listing.title}</h1>
 
-            {/* VALUATION CARD */}
-            <div className="bg-[#0b1e33] rounded-[32px] p-8 text-white flex justify-between items-center mb-10 shadow-2xl">
+            <div className={`rounded-[32px] p-8 text-white flex justify-between items-center mb-10 shadow-2xl transition-all ${isOwner ? 'bg-slate-800' : 'bg-[#0b1e33]'}`}>
                 <div>
-                    <p className="text-[9px] uppercase tracking-[0.2em] text-slate-400 font-black mb-1 opacity-70">Total Valuation</p>
-                    <p className="text-4xl font-black italic text-emerald-50">₱{listing.price?.toLocaleString()}</p>
+                    <p className="text-[9px] uppercase tracking-[0.2em] text-slate-400 font-black mb-1 opacity-70 italic">Valuation</p>
+                    <p className="text-4xl font-black italic text-emerald-50 tracking-tighter">₱{listing.price?.toLocaleString()}</p>
                 </div>
+                
                 <button 
-                  onClick={handleBuy}
-                  className="bg-emerald-400 hover:bg-emerald-500 text-slate-900 px-6 py-4 rounded-2xl font-black flex items-center gap-2 transition-all shadow-lg"
+                  onClick={handleBuyTrigger}
+                  disabled={listing.status === 'SOLD' || isOwner}
+                  className={`px-6 py-4 rounded-2xl font-black flex items-center gap-2 transition-all shadow-lg text-xs ${isOwner || listing.status === 'SOLD' ? 'bg-slate-700 text-slate-500 cursor-not-allowed border border-white/10' : 'bg-emerald-400 hover:bg-emerald-500 text-slate-900 active:scale-95'}`}
                 >
-                    <ShoppingBag size={20} /> Reserve
+                  {isOwner ? <UserCheck size={18}/> : <ShoppingBag size={18} />} 
+                  {isOwner ? "YOUR ITEM" : listing.status === 'SOLD' ? "SOLD" : "RESERVE"}
                 </button>
             </div>
 
-            {/* COMPONENT BREAKDOWN (WITH SCROLL) */}
-            <h3 className="font-black text-slate-900 uppercase tracking-[0.15em] text-[11px] mb-4 ml-1">
-              Component Breakdown ({listing.components?.length || 0})
-            </h3>
-            <div className="space-y-3 max-h-[320px] overflow-y-auto pr-2 custom-scrollbar">
-              {listing.components?.map((item: any, idx: number) => (
-                <div 
-                  key={idx} 
-                  className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-[20px] hover:border-emerald-200 transition-all"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="p-2 bg-slate-50 rounded-xl text-emerald-500"><Cpu size={20} /></div>
+            {/* COMPONENTS */}
+            <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+              {listing.components?.map((item: any, i: number) => (
+                <div key={i} className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-[24px] shadow-sm hover:border-emerald-200 transition-all">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-slate-50 rounded-xl text-emerald-500"><Cpu size={18} /></div>
                     <div>
-                      <h4 className="font-bold text-slate-900 text-xs">{item.name}</h4>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase">{item.condition} • {item.health}</p>
+                      <h4 className="font-black text-slate-900 text-[10px] uppercase">{item.name}</h4>
+                      <p className="text-[9px] text-slate-400 font-bold uppercase">{item.health}</p>
                     </div>
                   </div>
-                  <span className="font-black text-slate-900 text-sm">₱{item.price?.toLocaleString()}</span>
+                  <span className="font-black text-slate-900 text-sm">₱{item.price}</span>
                 </div>
               ))}
             </div>
 
-            {/* DYNAMIC SELLER CARD */}
+            {/* SELLER SECTION */}
             <div className="mt-12 pt-8 border-t border-slate-200">
                 <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-slate-200 rounded-full overflow-hidden border-2 border-white shadow-sm">
-                            {/* Uses actual seller image or fallback */}
-                            <img src={seller?.photoURL || `https://ui-avatars.com/api/?name=${seller?.displayName || 'Seller'}`} alt="Seller" />
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-sm bg-emerald-500 flex items-center justify-center">
+                            <img 
+                              src={`https://ui-avatars.com/api/?name=${encodeURIComponent(seller?.displayName || 'U')}&background=10b981&color=fff&bold=true`} 
+                              className="w-full h-full" 
+                              alt="s"
+                            />
                         </div>
                         <div>
-                            <p className="font-bold text-slate-900 text-sm">{seller?.displayName || "Authorized Seller"}</p>
-                            <p className="text-[10px] text-slate-400 font-bold">HNU Tech Community • {seller?.email ? 'Verified' : 'Member'}</p>
+                            
+                            <p className="font-black text-slate-900 text-[10px] uppercase tracking-tight">
+                              {seller?.displayName || "Authorized Seller"}
+                            </p>
+                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest italic">Verified Innovator</p>
                         </div>
                     </div>
-                    <div className="text-emerald-500 font-black text-xs bg-emerald-50 px-3 py-1 rounded-lg flex items-center gap-1">
+                    <div className="text-emerald-500 font-black text-[10px] bg-emerald-50 px-3 py-1 rounded-lg uppercase flex items-center gap-1">
                       <Star size={12} fill="currentColor" /> 4.9
                     </div>
                 </div>
-                <button className="w-full border-2 border-slate-900 text-slate-900 py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 hover:bg-slate-900 hover:text-white transition-all">
-                    <MessageSquare size={18} /> Message Seller
+                <button className="w-full border-2 border-slate-900 text-slate-900 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-slate-900 hover:text-white transition-all">
+                    Contact Seller
                 </button>
             </div>
           </section>
         </div>
       </main>
 
+      
+      {showAuthModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4">
+          <div className="bg-white w-full max-w-sm rounded-[40px] p-10 shadow-2xl text-center">
+            <div className="w-16 h-16 bg-emerald-50 rounded-3xl flex items-center justify-center text-emerald-500 mb-6 mx-auto"><ShoppingBag size={28} /></div>
+            <h3 className="text-2xl font-black text-slate-900 mb-2 italic">Join ScrapStack.</h3>
+            <p className="text-slate-500 text-[11px] font-medium mb-8">Sign in to reserve this technical manifest.</p>
+            <div className="space-y-3">
+              <button onClick={handleLogin} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-[10px] uppercase shadow-xl">Login with Google</button>
+              <button onClick={() => setShowAuthModal(false)} className="w-full bg-slate-100 text-slate-400 py-4 rounded-2xl font-black text-[10px] uppercase">Maybe Later</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4">
+          <div className="bg-white w-full max-w-sm rounded-[40px] p-10 shadow-2xl text-center">
+            <div className="w-16 h-16 bg-emerald-500 rounded-3xl flex items-center justify-center text-white mb-6 mx-auto"><CheckCircle size={28} /></div>
+            <h3 className="text-2xl font-black text-slate-900 mb-2 italic">Confirm Reserve?</h3>
+            <p className="text-slate-500 text-[11px] font-medium mb-8">Secure this ₱{listing?.price?.toLocaleString()} manifest.</p>
+            <div className="space-y-3">
+              <button onClick={executePurchase} disabled={isProcessing} className="w-full bg-emerald-500 text-white py-4 rounded-2xl font-black text-[10px] uppercase shadow-xl flex items-center justify-center">
+                {isProcessing ? <Loader2 className="animate-spin" size={16}/> : "CONFIRM PURCHASE"}
+              </button>
+              <button onClick={() => setShowConfirmModal(false)} className="w-full bg-slate-100 text-slate-400 py-4 rounded-2xl font-black text-[10px] uppercase">Go Back</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style jsx>{`
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
       `}</style>
     </div>
   );

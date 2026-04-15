@@ -51,14 +51,14 @@ export default function Marketplace() {
   );
 
   return (
-    // MOBILE FIX: Changed h-screen to min-h-screen and removed overflow-hidden for mobile
+   
     <div className="max-w-7xl mx-auto px-6 py-10 bg-white lg:h-screen flex flex-col lg:overflow-hidden">
       
       {/* HEADER */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-6 shrink-0">
         <div>
           <h1 className="text-4xl font-black text-slate-900 tracking-tight italic">Marketplace</h1>
-          <p className="text-slate-500 text-sm mt-1 font-medium italic">Hardware salvage hub for Bohol builders.</p>
+          <p className="text-slate-500 text-sm mt-1 font-medium italic">Hardware salvage hub for Local Innovators.</p>
         </div>
         <div className="relative w-full md:w-96">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
@@ -72,7 +72,6 @@ export default function Marketplace() {
         </div>
       </header>
 
-      {/* MOBILE FIX: Changed flex-row to flex-col on mobile, flex-1 and overflow-hidden only on LG */}
       <div className="flex flex-col lg:flex-row gap-10 lg:flex-1 lg:overflow-hidden">
         
         {/* SIDEBAR */}
@@ -81,7 +80,7 @@ export default function Marketplace() {
             <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2">
               <Layers size={14} /> Salvage Classes
             </h3>
-            {/* MOBILE FIX: Horizontal scroll for categories on mobile */}
+          
             <div className="flex flex-row lg:flex-col gap-2 overflow-x-auto pb-4 lg:pb-0 no-scrollbar">
               {CATEGORIES.map(cat => (
                 <button 
@@ -104,8 +103,7 @@ export default function Marketplace() {
 
           <div className="bg-emerald-500 rounded-[32px] p-6 text-slate-900 relative overflow-hidden shadow-lg border border-emerald-400">
             <Cpu className="absolute -right-4 -bottom-4 w-20 h-20 text-black/10" />
-            <h4 className="font-black text-xs mb-2 relative z-10">THE FORGE HNU</h4>
-            <p className="text-[10px] font-bold leading-tight mb-4 opacity-80 relative z-10 italic">Need a specific IC? Ask the guild.</p>
+            <p className="text-[15px] font-bold leading-tight mb-4 opacity-80 relative z-10 italic">Can't find what you're looking for?</p>
             <button className="w-full py-3 bg-slate-900 text-white text-[9px] font-black rounded-xl hover:bg-black transition-colors relative z-10">
               REQUEST PART
             </button>
