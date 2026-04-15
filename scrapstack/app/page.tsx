@@ -4,11 +4,11 @@ import React, { useState } from 'react';
 import Link from 'next/link'; 
 import { Brain, BarChart3, Zap } from 'lucide-react';
 
-// Ensure this path is 100% correct relative to this file
+
 import ListScrapModal from '../components/ListScrapModel'; 
 
 export default function Home() {
-  // Ensuring the hook is at the very top of the function body
+ 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
@@ -76,7 +76,7 @@ export default function Home() {
       <section className="w-full bg-[#065f46] py-24 text-center">
         <div className="max-w-4xl mx-auto px-6 text-white">
           <h2 className="text-5xl font-extrabold mb-8 tracking-tighter italic">Ready to Declutter and Innovate?</h2>
-          <p className="text-emerald-50/80 text-xl mb-12 font-medium">Join the circular economy movement at Holy Name University.</p>
+          <p className="text-emerald-50/80 text-xl mb-12 font-medium">Join the circular economy movement in the Philippines.</p>
           <div className="flex justify-center gap-4">
             <button 
               type="button"

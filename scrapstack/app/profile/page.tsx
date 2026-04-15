@@ -1,8 +1,8 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { 
-  Bell, Plus, Settings, Leaf, TrendingUp, ChevronRight, 
-  Loader2, Trash2, Package, Eye, AlertTriangle, X, ShoppingBag, CheckCircle
+  Bell, Plus, Leaf, TrendingUp, ChevronRight, 
+  Loader2, Trash2, Package, Eye, AlertTriangle, ShoppingBag, CheckCircle, DollarSign
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { auth, db } from '../../lib/firebase';
@@ -41,7 +41,6 @@ export default function ProfileDashboard() {
       if (currentUser) {
         setUser(currentUser);
         
-    
         const qSales = query(collection(db, "listings"), where("sellerId", "==", currentUser.uid));
         const qBought = query(collection(db, "listings"), where("purchasedBy", "==", currentUser.uid));
         
@@ -131,9 +130,6 @@ export default function ProfileDashboard() {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <button className="w-10 h-10 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 transition shadow-sm active:scale-95">
-            <Bell size={20} />
-          </button>
           <button onClick={() => router.push('/marketplace?list=true')} className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-sm transition active:scale-95">
             <Plus size={18} /> List New Scrap
           </button>
@@ -164,9 +160,9 @@ export default function ProfileDashboard() {
         <div className="lg:col-span-2 space-y-8 flex flex-col">
           
           {/* ACTIVE INVENTORY */}
-          <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm p-8 flex flex-col h-[400px]">
+          <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm p-8 flex flex-col h-[350px]">
             <div className="flex justify-between items-center mb-6 shrink-0">
-              <h2 className="text-xl font-bold text-slate-900 italic">Active Inventory</h2>
+              <h2 className="text-xl font-bold text-slate-900 italic">Active Listings</h2>
               <Package size={20} className="text-slate-300" />
             </div>
             
@@ -184,8 +180,8 @@ export default function ProfileDashboard() {
                       <div>
                         <h4 className="font-bold text-slate-900 text-sm group-hover:text-emerald-600 transition-colors">{item.title}</h4>
                         <div className="flex items-center gap-3 mt-1">
-                           <span className="bg-emerald-50 text-emerald-600 text-[9px] font-black px-2 py-0.5 rounded-full border border-emerald-100 tracking-tighter uppercase">ACTIVE</span>
-                           <span className="text-[10px] text-slate-400 flex items-center gap-1 font-bold"><Eye size={12}/> {item.views || 0}</span>
+                            <span className="bg-emerald-50 text-emerald-600 text-[9px] font-black px-2 py-0.5 rounded-full border border-emerald-100 tracking-tighter uppercase">ACTIVE</span>
+                            <span className="text-[10px] text-slate-400 flex items-center gap-1 font-bold"><Eye size={12}/> {item.views || 0}</span>
                         </div>
                       </div>
                     </div>
@@ -201,8 +197,44 @@ export default function ProfileDashboard() {
             </div>
           </div>
 
-          {/* PURCHASED ITEMS SECTION */}
-          <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm p-8 flex flex-col h-[400px]">
+          {/* NEW: SOLD MANIFESTS (SALES HISTORY) */}
+          <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm p-8 flex flex-col h-[350px]">
+            <div className="flex justify-between items-center mb-6 shrink-0">
+              <h2 className="text-xl font-bold text-slate-900 italic">Sales History</h2>
+              <DollarSign size={20} className="text-emerald-500" />
+            </div>
+            
+            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4">
+              {liveListings.filter(i => i.status === 'SOLD').length === 0 ? (
+                <div className="text-center py-10 bg-slate-50 rounded-2xl border border-dashed border-slate-200 h-full flex flex-col items-center justify-center">
+                  <DollarSign className="text-slate-200 mb-2" size={32} />
+                  <p className="text-slate-500 font-medium italic text-sm">No items sold yet.</p>
+                </div>
+              ) : (
+                liveListings.filter(i => i.status === 'SOLD').map((item) => (
+                  <div key={item.id} className="flex items-center justify-between p-4 bg-slate-900 text-white rounded-2xl shadow-lg border border-slate-800">
+                    <div className="flex items-center gap-4">
+                      <img src={item.imageUrl} className="w-12 h-12 rounded-xl object-cover border border-white/10 opacity-80" alt="s" />
+                      <div>
+                        <h4 className="font-bold text-sm tracking-tight">{item.title}</h4>
+                        <div className="flex items-center gap-2 mt-1">
+                           <CheckCircle size={12} className="text-emerald-400" />
+                           <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Payout Confirmed</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-black text-emerald-400 text-sm">+₱{item.price?.toLocaleString()}</div>
+                      <div className="text-[9px] font-bold text-slate-400 uppercase">Revenue</div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* SALVAGE COLLECTION (PURCHASES) */}
+          <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm p-8 flex flex-col h-[350px]">
             <div className="flex justify-between items-center mb-6 shrink-0">
               <h2 className="text-xl font-bold text-slate-900 italic">Salvage Collection</h2>
               <ShoppingBag size={20} className="text-emerald-500" />
@@ -236,24 +268,22 @@ export default function ProfileDashboard() {
               )}
             </div>
           </div>
-
-          {/* IMPACT BANNER */}
-          <div className="bg-[#116e4d] rounded-[32px] p-10 text-white relative overflow-hidden shadow-xl border border-emerald-800 shrink-0">
-            <Leaf className="absolute -right-12 -bottom-12 w-64 h-64 text-white/5" strokeWidth={1} />
-            <div className="relative z-10">
-              <h2 className="text-3xl font-black mb-3 italic tracking-tight">You're an Innovator!</h2>
-              <p className="text-emerald-50/80 text-sm leading-relaxed mb-8 max-w-sm font-medium">
-                Supporting the circular economy at HNU. Every part saved counts toward our community goal.
-              </p>
-              <button className="bg-white text-[#116e4d] px-8 py-3 rounded-2xl font-black text-xs hover:bg-emerald-50 transition shadow-lg active:scale-95">
-                SHARE YOUR IMPACT
-              </button>
-            </div>
-          </div>
         </div>
 
         {/* SIDEBAR WIDGETS */}
         <div className="space-y-8">
+          <div className="bg-[#116e4d] rounded-[32px] p-8 text-white relative overflow-hidden shadow-xl border border-emerald-800">
+            <Leaf className="absolute -right-12 -bottom-12 w-48 h-48 text-white/5" strokeWidth={1} />
+            <h2 className="text-2xl font-black mb-3 italic tracking-tight">Eco-Impact</h2>
+            <p className="text-emerald-50/80 text-xs leading-relaxed mb-6 font-medium">
+              You've diverted significant e-waste from the Tagbilaran landfill. Keep it up!
+            </p>
+            <div className="text-4xl font-black text-white italic">
+               {((dynamicStats.partsSalvaged + purchasedItems.length) * 0.5).toFixed(1)}kg
+            </div>
+            <div className="text-[9px] font-bold uppercase tracking-widest mt-1 opacity-60">Total Mass Salvaged</div>
+          </div>
+
           <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8">
             <h2 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2 italic">
               <TrendingUp className="text-emerald-500" size={20} /> Demand Radar
@@ -273,16 +303,6 @@ export default function ProfileDashboard() {
                 </div>
               ))}
             </div>
-          </div>
-
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8">
-            <h2 className="text-lg font-bold text-slate-900 mb-4 italic">Innovation Tip</h2>
-            <p className="text-slate-500 text-sm leading-relaxed mb-4 italic font-medium">
-              "A working motherboard is worth 3x the price of the copper inside. Always test the ports before harvesting!"
-            </p>
-            <a href="https://www.ifixit.com/" target="_blank" rel="noopener noreferrer" className="text-emerald-500 font-bold text-sm hover:underline flex items-center gap-1">
-              Read Build Guides <ChevronRight size={16} />
-            </a>
           </div>
         </div>
       </div>

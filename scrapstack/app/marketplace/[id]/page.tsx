@@ -5,8 +5,8 @@ import { db, auth } from '../../../lib/firebase';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { 
-  ArrowLeft, Cpu, MapPin, CheckCircle, 
-  Clock, ShoppingBag, MessageSquare, Loader2, Star, UserCheck, X
+  ArrowLeft, Cpu, CheckCircle, 
+  Clock, ShoppingBag, Loader2, Star, UserCheck, PartyPopper
 } from 'lucide-react';
 
 export default function ProductDetails() {
@@ -18,18 +18,15 @@ export default function ProductDetails() {
   
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false); // New Success State
   const [isProcessing, setIsProcessing] = useState(false);
-
 
   const [currentUser, setCurrentUser] = useState(auth.currentUser);
 
   useEffect(() => {
-    const unsub = auth.onAuthStateChanged((user) => {
-      setCurrentUser(user);
-    });
+    const unsub = auth.onAuthStateChanged((user) => setCurrentUser(user));
     return () => unsub();
   }, []);
-
 
   useEffect(() => {
     const fetchListingAndSeller = async () => {
@@ -42,23 +39,21 @@ export default function ProductDetails() {
           const listingData = docSnap.data();
           setListing(listingData);
           
-          
-          if (currentUser && listingData.sellerId === currentUser.uid) {
-            setSeller({
-              displayName: currentUser.displayName || "My Profile",
-            });
-          } 
-         
-          else if (listingData.sellerId) {
+          const initialSellerData = {
+            displayName: listingData.sellerName || "Rael Raphael Deloso",
+            photoURL: listingData.sellerPhoto || null
+          };
+          setSeller(initialSellerData);
+
+          if (listingData.sellerId && (!currentUser || listingData.sellerId !== currentUser.uid)) {
             const userSnap = await getDoc(doc(db, "users", listingData.sellerId));
-            if (userSnap.exists()) {
-              setSeller(userSnap.data());
-            } else {
-            
-              setSeller({
-                displayName: listingData.sellerName || "Authorized Seller",
-              });
-            }
+            if (userSnap.exists()) setSeller(userSnap.data());
+          } 
+          else if (currentUser && listingData.sellerId === currentUser.uid) {
+            setSeller({
+              displayName: currentUser.displayName || initialSellerData.displayName,
+              photoURL: currentUser.photoURL || initialSellerData.photoURL
+            });
           }
         } else {
           router.push('/marketplace');
@@ -69,9 +64,8 @@ export default function ProductDetails() {
         setLoading(false);
       }
     };
-
     fetchListingAndSeller();
-  }, [id, currentUser, router]); 
+  }, [id, currentUser?.uid, router]); 
 
   const handleLogin = async () => {
     const provider = new GoogleAuthProvider();
@@ -101,7 +95,11 @@ export default function ProductDetails() {
         purchasedBy: currentUser?.uid,
         soldAt: serverTimestamp()
       });
-      router.push('/profile');
+      
+      
+      setIsProcessing(false);
+      setShowConfirmModal(false);
+      setShowSuccessModal(true);
     } catch (e) {
       alert("Transaction failed.");
       setIsProcessing(false);
@@ -131,7 +129,7 @@ export default function ProductDetails() {
           {/* IMAGE & DESC */}
           <section className="lg:col-span-7 space-y-6">
             <div className="rounded-[40px] overflow-hidden shadow-2xl border border-slate-200 bg-white">
-              <img src={listing.imageUrl || "https://placehold.co/600x400?text=No+Image"} className="w-full aspect-[4/3] object-cover" alt="p" />
+              <img src={listing.imageUrl || "https://placehold.co/600x400?text=No+Image"} className="w-full aspect-[4/3] object-cover" alt="Product" />
             </div>
             <div className="bg-white p-8 rounded-[32px] border border-slate-100 text-slate-500 italic font-medium text-sm leading-relaxed shadow-sm">
               "{listing.description}"
@@ -145,7 +143,7 @@ export default function ProductDetails() {
               <span className="text-slate-400 text-[9px] flex items-center gap-1 font-black uppercase tracking-widest"><Clock size={14} /> {listing.status === 'SOLD' ? 'Closed' : 'Active'}</span>
             </div>
             
-            <h1 className="text-4xl font-black text-slate-900 mb-6 italic tracking-tighter">{listing.title}</h1>
+            <h1 className="text-4xl font-black text-slate-900 mb-6 italic tracking-tighter leading-tight">{listing.title}</h1>
 
             <div className={`rounded-[32px] p-8 text-white flex justify-between items-center mb-10 shadow-2xl transition-all ${isOwner ? 'bg-slate-800' : 'bg-[#0b1e33]'}`}>
                 <div>
@@ -159,11 +157,10 @@ export default function ProductDetails() {
                   className={`px-6 py-4 rounded-2xl font-black flex items-center gap-2 transition-all shadow-lg text-xs ${isOwner || listing.status === 'SOLD' ? 'bg-slate-700 text-slate-500 cursor-not-allowed border border-white/10' : 'bg-emerald-400 hover:bg-emerald-500 text-slate-900 active:scale-95'}`}
                 >
                   {isOwner ? <UserCheck size={18}/> : <ShoppingBag size={18} />} 
-                  {isOwner ? "YOUR ITEM" : listing.status === 'SOLD' ? "SOLD" : "RESERVE"}
+                  {isOwner ? "YOUR ITEM" : listing.status === 'SOLD' ? "SOLD" : "PURCHASE"}
                 </button>
             </div>
-
-            {/* COMPONENTS */}
+            
             <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
               {listing.components?.map((item: any, i: number) => (
                 <div key={i} className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-[24px] shadow-sm hover:border-emerald-200 transition-all">
@@ -184,41 +181,29 @@ export default function ProductDetails() {
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-sm bg-emerald-500 flex items-center justify-center">
-                            <img 
-                              src={`https://ui-avatars.com/api/?name=${encodeURIComponent(seller?.displayName || 'U')}&background=10b981&color=fff&bold=true`} 
-                              className="w-full h-full" 
-                              alt="s"
-                            />
+                            <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(seller?.displayName || 'U')}&background=10b981&color=fff&bold=true`} className="w-full h-full" alt="s" />
                         </div>
                         <div>
-                            
-                            <p className="font-black text-slate-900 text-[10px] uppercase tracking-tight">
-                              {seller?.displayName || "Authorized Seller"}
-                            </p>
+                            <p className="font-black text-slate-900 text-[10px] uppercase tracking-tight">{seller?.displayName}</p>
                             <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest italic">Verified Innovator</p>
                         </div>
                     </div>
-                    <div className="text-emerald-500 font-black text-[10px] bg-emerald-50 px-3 py-1 rounded-lg uppercase flex items-center gap-1">
-                      <Star size={12} fill="currentColor" /> 4.9
-                    </div>
+                    <div className="text-emerald-500 font-black text-[10px] bg-emerald-50 px-3 py-1 rounded-lg uppercase flex items-center gap-1"><Star size={12} fill="currentColor" /> 4.9</div>
                 </div>
-                <button className="w-full border-2 border-slate-900 text-slate-900 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-slate-900 hover:text-white transition-all">
-                    Contact Seller
-                </button>
+                <button className="w-full border-2 border-slate-900 text-slate-900 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-slate-900 hover:text-white transition-all active:scale-95 shadow-sm">Contact Seller</button>
             </div>
           </section>
         </div>
       </main>
 
-      
       {showAuthModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4 animate-in fade-in duration-200">
           <div className="bg-white w-full max-w-sm rounded-[40px] p-10 shadow-2xl text-center">
             <div className="w-16 h-16 bg-emerald-50 rounded-3xl flex items-center justify-center text-emerald-500 mb-6 mx-auto"><ShoppingBag size={28} /></div>
             <h3 className="text-2xl font-black text-slate-900 mb-2 italic">Join ScrapStack.</h3>
-            <p className="text-slate-500 text-[11px] font-medium mb-8">Sign in to reserve this technical manifest.</p>
+            <p className="text-slate-500 text-[11px] font-medium mb-8">Sign in to purchase this technical manifest.</p>
             <div className="space-y-3">
-              <button onClick={handleLogin} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-[10px] uppercase shadow-xl">Login with Google</button>
+              <button onClick={handleLogin} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-[10px] uppercase shadow-xl active:scale-95 transition-all">Login with Google</button>
               <button onClick={() => setShowAuthModal(false)} className="w-full bg-slate-100 text-slate-400 py-4 rounded-2xl font-black text-[10px] uppercase">Maybe Later</button>
             </div>
           </div>
@@ -226,17 +211,37 @@ export default function ProductDetails() {
       )}
 
       {showConfirmModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4 animate-in zoom-in-95 duration-200">
           <div className="bg-white w-full max-w-sm rounded-[40px] p-10 shadow-2xl text-center">
             <div className="w-16 h-16 bg-emerald-500 rounded-3xl flex items-center justify-center text-white mb-6 mx-auto"><CheckCircle size={28} /></div>
-            <h3 className="text-2xl font-black text-slate-900 mb-2 italic">Confirm Reserve?</h3>
-            <p className="text-slate-500 text-[11px] font-medium mb-8">Secure this ₱{listing?.price?.toLocaleString()} manifest.</p>
+            <h3 className="text-2xl font-black text-slate-900 mb-2 italic tracking-tighter text-center">Checkout</h3>
+            <p className="text-slate-500 text-[11px] font-medium mb-8 italic text-center px-4">Confirming will allocate ₱{listing?.price?.toLocaleString()} to this hardware manifest.</p>
             <div className="space-y-3">
-              <button onClick={executePurchase} disabled={isProcessing} className="w-full bg-emerald-500 text-white py-4 rounded-2xl font-black text-[10px] uppercase shadow-xl flex items-center justify-center">
-                {isProcessing ? <Loader2 className="animate-spin" size={16}/> : "CONFIRM PURCHASE"}
+              <button onClick={executePurchase} disabled={isProcessing} className="w-full bg-emerald-500 text-white py-4 rounded-2xl font-black text-[10px] uppercase shadow-xl flex items-center justify-center active:scale-95 transition-all">
+                {isProcessing ? <Loader2 className="animate-spin" size={16}/> : "CONFIRM & PAY"}
               </button>
-              <button onClick={() => setShowConfirmModal(false)} className="w-full bg-slate-100 text-slate-400 py-4 rounded-2xl font-black text-[10px] uppercase">Go Back</button>
+              <button onClick={() => setShowConfirmModal(false)} className="w-full bg-slate-100 text-slate-400 py-4 rounded-2xl font-black text-[10px] uppercase">Cancel</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-emerald-900/90 backdrop-blur-xl p-4 animate-in fade-in duration-300">
+          <div className="bg-white w-full max-w-sm rounded-[40px] p-10 shadow-2xl text-center scale-up-center">
+            <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-6 mx-auto animate-bounce">
+              <PartyPopper size={40} />
+            </div>
+            <h3 className="text-3xl font-black text-slate-900 mb-2 italic tracking-tighter">Manifest Secured!</h3>
+            <p className="text-slate-500 text-[12px] font-bold mb-8 leading-relaxed">
+              Thank you for your purchase. You've just fueled another local innovation. Check your profile to view your digital asset.
+            </p>
+            <button 
+              onClick={() => router.push('/profile')}
+              className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-2xl active:scale-95 transition-all"
+            >
+              GO TO MY INVENTORY
+            </button>
           </div>
         </div>
       )}
@@ -244,6 +249,8 @@ export default function ProductDetails() {
       <style jsx>{`
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        .scale-up-center { animation: scale-up-center 0.4s cubic-bezier(0.390, 0.575, 0.565, 1.000) both; }
+        @keyframes scale-up-center { 0% { transform: scale(0.5); } 100% { transform: scale(1); } }
       `}</style>
     </div>
   );
