@@ -107,7 +107,7 @@ export default function ListScrapModal({ isOpen, onClose }: { isOpen: boolean, o
         TASK:
         1. SUGGEST TITLE: A concise product name.
         2. GENERATE MANIFEST: A technical 2-3 sentence description.
-        3. LIST PARTS: Identify 3-5 components and their PHP value.
+        3. LIST PARTS: Identify major salvagable components and their PHP value use the current market prices of the Philippines specifically Bohol or Cebu to get accurate price.
 
         Return ONLY a JSON object: 
         {
