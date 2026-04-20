@@ -96,7 +96,7 @@ export default function ListScrapModal({ isOpen, onClose }: { isOpen: boolean, o
     if (images.length === 0) return;
     setStep(2);
     try {
-      const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
       const imageParts = await Promise.all(images.map(fileToGenerativePart));
 
       const prompt = `
